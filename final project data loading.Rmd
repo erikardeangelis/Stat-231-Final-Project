@@ -54,5 +54,6 @@ library(lubridate)
 nys %>% 
   mutate(year = year(date)) %>%
   filter(year == 2015)
+
 ```
 
