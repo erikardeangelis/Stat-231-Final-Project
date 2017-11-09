@@ -1,0 +1,58 @@
+---
+title: "Final Project Data"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+library(mdsr)   # Load additional packages here
+library(tidyverse)
+
+# Some customization.  You can alter or delete as desired (if you know what you are doing).
+trellis.par.set(theme=theme.mosaic()) # change default color scheme for lattice
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small")
+```
+
+
+```{r}
+library(readr)
+outbreaks_dataset <- read_csv("outbreaks dataset.csv")
+View(outbreaks_dataset)
+table(outbreaks_dataset$State)
+
+#outbreaks_dataset %>%
+  #filter(State == "New York", Year >= 2015)
+```
+
+
+```{r}
+ecoli_data <- read_csv("ecoli data.csv")
+View(ecoli_data)
+names(ecoli_data)
+
+ecoli_clean <- ecoli_data %>%
+  select(biosample_acc, collection_date, epi_type, geo_loc_name, host, isolation_source, target_creation_date, status)
+```
+
+```{r}
+salmonella_dataset <- read_csv("salmonella dataset.csv")
+View(salmonella_dataset)
+names(salmonella_dataset)
+
+salmonella_clean <- salmonella_dataset %>%
+  select(biosample_acc, epi_type, geo_loc_name, host, scientific_name, sra_release_date, strain, target_creation_date, status, isolation_source, collection_date)
+```
+
+```{r}
+nys <- read_csv("https://health.data.ny.gov/resource/f285-x9ha.csv")
+
+library(lubridate)
+
+nys %>% 
+  mutate(year = year(date)) %>%
+  filter(year == 2015)
+```
+
