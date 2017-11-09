@@ -22,9 +22,6 @@ library(readr)
 outbreaks_dataset <- read_csv("outbreaks dataset.csv")
 View(outbreaks_dataset)
 table(outbreaks_dataset$State)
-
-#outbreaks_dataset %>%
-  #filter(State == "New York", Year >= 2015)
 ```
 
 
@@ -47,13 +44,22 @@ salmonella_clean <- salmonella_dataset %>%
 ```
 
 ```{r}
-nys <- read_csv("https://health.data.ny.gov/resource/f285-x9ha.csv")
+#importing florida restaurant data
+for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')){
+  for(year in 10:15){
+    url <- sprintf('ftp://dbprftp.state.fl.us/pub/llweb/rdar%s%s.csv', month, year)
+    monthly_df <- read_csv(url, col_names=F)
+    write.csv(monthly_df, sprintf('data/florida_violation_%s_%s', month, year), row.names=F)
+  }
+}
 
-library(lubridate)
+current_bind <- rbind('data/florida_violation_01_10', 'data/florida_violation_01_11')
 
-nys %>% 
-  mutate(year = year(date)) %>%
-  filter(year == 2015)
-
+all_florida_restaurants <- for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')){
+  for(year in 10:15){
+  if((month != '01' & year != '10') & (month != '01' & year != '11'))
+   current_bind <- rbind(current_bind, sprintf('data/florida_violation_%s_%s', month, year))
+  }
+}
 ```
 
