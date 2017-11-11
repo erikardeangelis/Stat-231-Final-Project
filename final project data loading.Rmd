@@ -19,14 +19,14 @@ knitr::opts_chunk$set(
 
 ```{r}
 library(readr)
-outbreaks_dataset <- read_csv("outbreaks dataset.csv")
+outbreaks_dataset <- read_csv("data/outbreaks dataset.csv")
 View(outbreaks_dataset)
 table(outbreaks_dataset$State)
 ```
 
 
 ```{r}
-ecoli_data <- read_csv("ecoli data.csv")
+ecoli_data <- read_csv("data/ecoli filtered data.csv")
 View(ecoli_data)
 names(ecoli_data)
 
@@ -35,7 +35,10 @@ ecoli_clean <- ecoli_data %>%
 ```
 
 ```{r}
-salmonella_dataset <- read_csv("salmonella dataset.csv")
+salmonella_1 <- read_csv("data/Salmonella Part 1.csv")
+salmonella_2 <- read_csv("data/Salmonella Part 2.csv")
+
+salmonella_dataset <- rbind(salmonella_1, salmonella_2)
 View(salmonella_dataset)
 names(salmonella_dataset)
 
