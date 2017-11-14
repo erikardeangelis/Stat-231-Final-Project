@@ -22,6 +22,17 @@ library(readr)
 outbreaks_dataset <- read_csv("data/outbreaks dataset.csv")
 View(outbreaks_dataset)
 table(outbreaks_dataset$State)
+
+outbreaks_tidy <- outbreaks_dataset %>%
+  filter(Location == "Restaurant") 
+
+outbreaks_by_state <- outbreaks_tidy %>%
+  group_by(State, Year) %>%
+  summarise(num_outbreaks = n(), num_hosp = sum(Hospitalizations, na.rm = T), num_ill = sum(Illnesses, na.rm = T), num_fatal = sum(Fatalities, na.rm = T)) %>%
+  arrange(desc(num_outbreaks))
+
+##time series plot
+ggplot(outbreaks_by_state, aes(x = Year, y = num_outbreaks, col = State)) + geom_line()
 ```
 
 
@@ -67,6 +78,7 @@ for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
   }
 }
 
+#not working right now
 all_florida_restaurants <- current_bind
 library(lubridate)
 
@@ -75,5 +87,23 @@ restaurants <- all_florida_restaurants %>%
   mutate(date = mdy(all_florida_restaurants$X11, format="%m/%d/%Y"))
          
 table(restaurants$date)
+```
+
+```{r}
+#outbreaks for florida
+outbreaks_florida <- outbreaks_tidy %>%
+  filter(State == "Florida") %>%  
+  group_by(State, Year, Month) %>%
+  summarise(num_outbreaks = n(), num_hosp = sum(Hospitalizations, na.rm = T), num_ill = sum(Illnesses, na.rm = T), num_fatal = sum(Fatalities, na.rm = T)) %>%
+  arrange(desc(num_outbreaks))
+  
+
+ggplot(outbreaks_florida, aes(x = Year, y = num_outbreaks)) + geom_point() + geom_smooth(se = F)
+```
+
+```{r}
+#restaurant violations per year
+
+
 ```
 
