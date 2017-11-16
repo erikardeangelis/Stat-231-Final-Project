@@ -90,19 +90,43 @@ table(restaurants$date)
 ```
 
 ```{r}
+library(zoo)
 #outbreaks for florida
 outbreaks_florida <- outbreaks_tidy %>%
-  filter(State == "Florida") %>%  
-  group_by(State, Year, Month) %>%
+  filter(State == "Florida", Year >= 2010) %>%  
+  mutate(month_num = ifelse(Month == "January", 01, 
+                            ifelse(Month == "February", 02, 
+                                   ifelse(Month == "March", 03, 
+                                          ifelse(Month == "April", 04,
+                                                 ifelse(Month == "May", 05,
+                                                        ifelse(Month == "June", 06,
+                                                               ifelse(Month == "July", 07,
+                                                                      ifelse(Month == "August", 08,
+                                                                             ifelse(Month == "September", 09,
+                                                                                    ifelse(Month == "October", 10,
+                                                                                           ifelse(Month == "November", 11, 12))))))))))),
+         date_char = paste(Year, month_num, sep="-"),
+         yearmon_date = as.yearmon(date_char)) %>%
+  group_by(State, yearmon_date) %>%
   summarise(num_outbreaks = n(), num_hosp = sum(Hospitalizations, na.rm = T), num_ill = sum(Illnesses, na.rm = T), num_fatal = sum(Fatalities, na.rm = T)) %>%
   arrange(desc(num_outbreaks))
   
+ggplot(outbreaks_florida, aes(x = yearmon_date, y = num_outbreaks)) + geom_point() + geom_smooth(se = F)
 
-ggplot(outbreaks_florida, aes(x = Year, y = num_outbreaks)) + geom_point() + geom_smooth(se = F)
+ggplot(outbreaks_florida, aes(x = yearmon_date, y = num_outbreaks)) + geom_line() 
 ```
 
 ```{r}
 #restaurant violations per year
+
+violations_graph <- all_florida_restaurants %>%
+  mutate(date = as.Date(X11, "%m/%d/%Y"), yearmon_flor = as.yearmon(date)) %>%
+  group_by(yearmon_flor) %>%
+  summarise(sum_violations = sum(as.numeric(X9), na.rm = T))
+
+ggplot(data = violations_graph, aes(x = yearmon_flor, y = sum_violations)) + geom_line()
+
+#ggplot() + geom_line(data = violations_graph, aes(x = yearmon_flor, y = sum_violations)) + geom_line(data = outbreaks_florida, aes(x = yearmon_date, y = num_outbreaks))
 
 
 ```
