@@ -58,13 +58,13 @@ salmonella_clean <- salmonella_dataset %>%
 
 ```{r}
 #importing florida restaurant data
-for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')){
-  for(year in 10:15){
-    url <- sprintf('ftp://dbprftp.state.fl.us/pub/llweb/rdar%s%s.csv', month, year)
-    monthly_df <- read_csv(url, col_names=F)
-    write.csv(monthly_df, sprintf('data/florida_violation_%s_%s', month, year), row.names=F)
-  }
-}
+#for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')){
+  #for(year in 10:15){
+   # url <- sprintf('ftp://dbprftp.state.fl.us/pub/llweb/rdar%s%s.csv', month, year)
+    #monthly_df <- read_csv(url, col_names=F)
+    #write.csv(monthly_df, sprintf('data/florida_violation_%s_%s', month, year), row.names=F)
+  #}
+#}
 
 current_bind <- rbind(read_csv('data/florida_violation_01_10'), read_csv('data/florida_violation_01_11'))
 
@@ -148,6 +148,7 @@ cor(combined_graph$sum_violations, combined_graph$num_outbreaks, method = "pears
 library(maps)
 library(RColorBrewer)
 library(gganimate)
+
 outbreaks_data_for_map <- outbreaks_by_state %>%
   filter(Year >= 2000) %>%
   mutate(state_name = tolower(State), bi_year = 2 * floor(Year/2))
