@@ -8,6 +8,8 @@ output:
 ```{r}
 library(mdsr)   # Load additional packages here
 library(tidyverse)
+library(plotly)
+library(knitr)
 
 # Some customization.  You can alter or delete as desired (if you know what you are doing).
 trellis.par.set(theme=theme.mosaic()) # change default color scheme for lattice
@@ -20,7 +22,6 @@ knitr::opts_chunk$set(
 ```{r}
 library(readr)
 outbreaks_dataset <- read_csv("data/outbreaks dataset.csv")
-View(outbreaks_dataset)
 table(outbreaks_dataset$State)
 
 outbreaks_tidy <- outbreaks_dataset %>%
@@ -38,7 +39,6 @@ ggplot(outbreaks_by_state, aes(x = Year, y = num_outbreaks, col = State)) + geom
 
 ```{r}
 ecoli_data <- read_csv("data/ecoli filtered data.csv")
-View(ecoli_data)
 names(ecoli_data)
 
 ecoli_clean <- ecoli_data %>%
@@ -50,7 +50,6 @@ salmonella_1 <- read_csv("data/Salmonella Part 1.csv")
 salmonella_2 <- read_csv("data/Salmonella Part 2.csv")
 
 salmonella_dataset <- rbind(salmonella_1, salmonella_2)
-View(salmonella_dataset)
 names(salmonella_dataset)
 
 salmonella_clean <- salmonella_dataset %>%
@@ -82,11 +81,11 @@ for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
 all_florida_restaurants <- current_bind
 library(lubridate)
 
-restaurants <- all_florida_restaurants %>%
-  filter(!is.na(X11)) %>%
-  mutate(date = mdy(all_florida_restaurants$X11, format="%m/%d/%Y"))
+#restaurants <- all_florida_restaurants %>%
+  #filter(!is.na(X11)) %>%
+  #mutate(date = mdy(all_florida_restaurants$X11, format="%m/%d/%Y"))
          
-table(restaurants$date)
+#table(restaurants$date)
 ```
 
 ```{r}
@@ -128,6 +127,40 @@ ggplot(data = violations_graph, aes(x = yearmon_flor, y = sum_violations)) + geo
 
 #ggplot() + geom_line(data = violations_graph, aes(x = yearmon_flor, y = sum_violations)) + geom_line(data = outbreaks_florida, aes(x = yearmon_date, y = num_outbreaks))
 
+
+```
+
+```{r}
+combined_graph <- inner_join(outbreaks_florida, violations_graph, by = c("yearmon_date" = "yearmon_flor"))
+
+ggplot(data = combined_graph, aes(x = sum_violations, y = num_outbreaks)) + geom_point() + geom_smooth(se = F)
+
+ggplot(data = combined_graph, aes(x = sqrt(sum_violations), y = num_outbreaks)) + geom_point() + geom_smooth(se = F)
+
+ggplot(data = combined_graph, aes(x = sqrt(sum_violations), y = num_outbreaks)) + geom_point() + geom_smooth(se = F) + xlim(20, 27)
+
+cor(combined_graph$sum_violations, combined_graph$num_outbreaks, method = "pearson")
+```
+
+##Map
+
+```{r}
+library(maps)
+library(RColorBrewer)
+outbreaks_data_for_map <- outbreaks_by_state %>%
+  filter(Year >= 2010 & Year < 2015) %>%
+  mutate(state_name = tolower(State))
+
+all_states <- map_data("state")
+
+outbreaks_map <- inner_join(outbreaks_data_for_map, all_states, by = c("state_name" = "region"))
+
+outbreaks_map$VALUE <- outbreaks_map$num_outbreaks
+
+p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE), colour="white") + xlab("Longitude") + ylab("Latitude") + ggtitle("Number of Outbreaks from [year] to [year]") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "blue", na.value = "white")
+
+
+p
 
 ```
 
