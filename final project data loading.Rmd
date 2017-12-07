@@ -148,16 +148,16 @@ cor(combined_graph$sum_violations, combined_graph$num_outbreaks, method = "pears
 library(maps)
 library(RColorBrewer)
 outbreaks_data_for_map <- outbreaks_by_state %>%
-  filter(Year >= 2010 & Year < 2015) %>%
+  filter(Year >= 2000 & Year < 2005) %>%
   mutate(state_name = tolower(State))
 
 all_states <- map_data("state")
 
-outbreaks_map <- inner_join(outbreaks_data_for_map, all_states, by = c("state_name" = "region"))
+outbreaks_map <- right_join(outbreaks_data_for_map, all_states, by = c("state_name" = "region"))
 
 outbreaks_map$VALUE <- outbreaks_map$num_outbreaks
 
-p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE), colour="white") + xlab("Longitude") + ylab("Latitude") + ggtitle("Number of Outbreaks from [year] to [year]") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "blue", na.value = "white")
+p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE), colour="white") + xlab("Longitude") + ylab("Latitude") + ggtitle("Number of Outbreaks from [year] to [year]") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "blue", na.value = "grey80")
 
 
 p
