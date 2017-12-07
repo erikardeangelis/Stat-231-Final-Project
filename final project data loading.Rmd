@@ -147,6 +147,7 @@ cor(combined_graph$sum_violations, combined_graph$num_outbreaks, method = "pears
 ```{r}
 library(maps)
 library(RColorBrewer)
+library(devtools)
 library(gganimate)
 
 outbreaks_data_for_map <- outbreaks_by_state %>%
@@ -159,12 +160,55 @@ outbreaks_map <- right_join(outbreaks_data_for_map, all_states, by = c("state_na
 
 outbreaks_map$VALUE <- outbreaks_map$num_outbreaks
 
-p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, frame = bi_year, cumulative = F), colour="white") + xlab("Longitude") + ylab("Latitude") + ggtitle("Number of Outbreaks from [year] to [year]") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "blue", na.value = "grey80")
+ p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, frame = bi_year, cumulative = F), colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "red", na.value = "grey80") 
 
 
-p
+gganimate(p, title_frame = F)
 
-gg_animate(p, filename = "maptimeseries.gif", interval = 3.0)
+#gganimate(p, filename = "maptimeseries",  saver = "gif", interval = 3.0)
+
+aq <- airquality
+aq$date <- as.Date(paste(1973, aq$Month, aq$Day, sep = "-"))
+
+p2 <- ggplot(aq, aes(date, Temp, frame = Month, cumulative = TRUE)) +
+  geom_line()
+
+gganimate(p2, title_frame = FALSE)
+
 
 ```
 
+saveGIF({
+
+  for (i in unique(outbreaks_map$bi_year)) {
+
+    data <- subset(outbreaks_map, bi_year == i)
+    p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "blue", na.value = "grey80") + ggtitle(i)
+
+    print(p)                      
+
+```{r}
+#poultryfoods <- c("Chicken")
+#meatfoods <- c("Wings", "Ham", "Meatball")
+#fishfoods <- c("Sushi")
+
+d <- outbreaks_tidy %>%
+  filter(Year >= 2013, !is.na(Food)) %>%
+  mutate(poultry = ifelse(grepl("Chicken|Duck", as.character(Food)), 1, 0),
+    meat = ifelse(grepl("Wings|Ham|Meatball|Sausage|Steak|Beef|Burger|Pork|burger|Bacon", as.character(Food)), 1, 0), 
+    fish = ifelse(grepl("Sushi|Oysters|Fish|Kare|Crab|fish|Tuna|Shrimp|Scallops|Salmon|Seafood|Clam|Lobster|Eel", as.character(Food)), 1, 0),
+    veggie = ifelse(grepl("Salad|Tomato|Lettuce|Pepper|Broccoli|Carrot|Bean|Cabbage|Onion|Vegetable|Guacamole|Cucumber|Zucchini", as.character(Food)), 1, 0),
+    carbs = ifelse(grepl("Roll|Bread|Fries|Rice|Noodles|Pizza|Pancake|Pasta", as.character(Food)), 1, 0),
+    dairy = ifelse(grepl("Goat|Cream|Egg|Cheese|Alfredo|Mozzarella|Provolone", as.character(Food)), 1, 0),
+    dessert = ifelse(grepl("Pie|Cookie|Brownie|Pastry", as.character(Food)), 1, 0)
+         )
+
+#d %>% select(Food, meat, fish) %>% head()
+
+quizfoods <- d %>%
+  group_by(State) %>%
+  summarise(total_poultry = sum(poultry), total_meat = sum(meat), total_fish = sum(fish), total_veggie = sum(veggie), total_carbs = sum(carbs), total_dairy = sum(dairy), total_dessert = sum(dessert))
+
+```
+    
+    
