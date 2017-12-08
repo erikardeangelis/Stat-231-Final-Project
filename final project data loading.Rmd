@@ -175,17 +175,34 @@ p2 <- ggplot(aq, aes(date, Temp, frame = Month, cumulative = TRUE)) +
 
 gganimate(p2, title_frame = FALSE)
 
-
-```
-
+library(animation)
 saveGIF({
 
   for (i in unique(outbreaks_map$bi_year)) {
 
     data <- subset(outbreaks_map, bi_year == i)
-    p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "blue", na.value = "grey80") + ggtitle(i)
+    p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, colour="white")) + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "blue", na.value = "grey80") + ggtitle(i)
 
     print(p)                      
+
+  }
+}, movie.name = "map.gif", interval = 0.2)
+
+
+saveGIF({
+  brownian.motion(pch = 21, cex = 5, col = "red", bg = "yellow")
+}, movie.name = "brownian_motion.gif", interval = 0.1, nmax = 30, 
+  ani.width = 600)
+
+im.convert(p, output = "animation.gif", convert = c("convert", "gm convert"), 
+    cmd.fun = if (.Platform$OS.type == "windows") shell else system, extra.opts = "", 
+    clean = FALSE)
+gm.convert(..., convert = "gm convert")
+
+
+system("convert -delay 80 *.png brownian_motion.gif")
+```
+
 
 ```{r}
 #poultryfoods <- c("Chicken")
@@ -207,8 +224,49 @@ d <- outbreaks_tidy %>%
 
 quizfoods <- d %>%
   group_by(State) %>%
-  summarise(total_poultry = sum(poultry), total_meat = sum(meat), total_fish = sum(fish), total_veggie = sum(veggie), total_carbs = sum(carbs), total_dairy = sum(dairy), total_dessert = sum(dessert))
+  summarise(total_poultry = sum(poultry), total_meat = sum(meat), total_fish = sum(fish), total_veggie = sum(veggie), total_carbs = sum(carbs), total_dairy = sum(dairy), total_dessert = sum(dessert), total_outbreaks = n())
+
+statefooddata <- function(state){
+  foods_state<- quizfoods%>% 
+    filter(State == state)
+  paste("Number of total outbreaks: ", foods_state$total_outbreaks)
+  p
+}
+
+statefooddata("Massachusetts")
 
 ```
-    
+
+```{r}
+ui <- fluidPage(
+  title = "Dangerous Foods in Your State",
+  sidebarLayout(
+    sidebarPanel(
+      selectizeInput(
+        'e0', 'Select Your State',
+        choices = quizfoods$State
+      ),
+      selectizeInput(
+        'e1', 'Food Preferences', choices = c("Poultry", "Meat", "Fish", "Vegetables", "Carbs", "Dairy", "Desserts"), multiple = T
+      )
+    ),
+  mainPanel(
+    helpText("Foods to Avoid"),
+    verbatimTextOutput("result")
+      )
+  
+)
+)
+
+server <- function(input, output, session) {
+    output$result <- renderPrint({
+      result <- paste("Hi", statefooddata(input$e0))
+      result
+      }
+)
+}
+food_quiz <- shinyApp(ui, server)
+runApp(food_quiz)
+```
+
     
