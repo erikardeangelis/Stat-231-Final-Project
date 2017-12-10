@@ -149,6 +149,8 @@ library(maps)
 library(RColorBrewer)
 library(devtools)
 library(gganimate)
+library(animation)
+#library(ffmpeg)
 
 outbreaks_data_for_map <- outbreaks_by_state %>%
   filter(Year >= 2000) %>%
@@ -156,51 +158,16 @@ outbreaks_data_for_map <- outbreaks_by_state %>%
 
 all_states <- map_data("state")
 
-outbreaks_map <- right_join(outbreaks_data_for_map, all_states, by = c("state_name" = "region"))
+outbreaks_map <- right_join(outbreaks_data_for_map, all_states, by = c("state_name" = "region")) 
 
 outbreaks_map$VALUE <- outbreaks_map$num_outbreaks
 
- p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, frame = bi_year, cumulative = F), colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "red", na.value = "grey80") 
+ p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, frame = bi_year, cumulative = F), colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_continuous(low = "white", high = "red", na.value = "black")
 
 
-gganimate(p, title_frame = F)
+g <- gganimate(p, title_frame = T, interval = 3.0, "output.mp4", ani.width=600, ani.height=400)
+g
 
-#gganimate(p, filename = "maptimeseries",  saver = "gif", interval = 3.0)
-
-aq <- airquality
-aq$date <- as.Date(paste(1973, aq$Month, aq$Day, sep = "-"))
-
-p2 <- ggplot(aq, aes(date, Temp, frame = Month, cumulative = TRUE)) +
-  geom_line()
-
-gganimate(p2, title_frame = FALSE)
-
-library(animation)
-saveGIF({
-
-  for (i in unique(outbreaks_map$bi_year)) {
-
-    data <- subset(outbreaks_map, bi_year == i)
-    p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, colour="white")) + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "blue", na.value = "grey80") + ggtitle(i)
-
-    print(p)                      
-
-  }
-}, movie.name = "map.gif", interval = 0.2)
-
-
-saveGIF({
-  brownian.motion(pch = 21, cex = 5, col = "red", bg = "yellow")
-}, movie.name = "brownian_motion.gif", interval = 0.1, nmax = 30, 
-  ani.width = 600)
-
-im.convert(p, output = "animation.gif", convert = c("convert", "gm convert"), 
-    cmd.fun = if (.Platform$OS.type == "windows") shell else system, extra.opts = "", 
-    clean = FALSE)
-gm.convert(..., convert = "gm convert")
-
-
-system("convert -delay 80 *.png brownian_motion.gif")
 ```
 
 
@@ -229,8 +196,7 @@ quizfoods <- d %>%
 statefooddata <- function(state){
   foods_state<- quizfoods%>% 
     filter(State == state)
-  paste("Number of total outbreaks: ", foods_state$total_outbreaks)
-  p
+  paste("number of total outbreaks: ", foods_state$total_outbreaks)
 }
 
 statefooddata("Massachusetts")
@@ -260,7 +226,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
     output$result <- renderPrint({
-      result <- paste("Hi", statefooddata(input$e0))
+      result <- paste("The", statefooddata(input$e0))
       result
       }
 )
@@ -269,4 +235,51 @@ food_quiz <- shinyApp(ui, server)
 runApp(food_quiz)
 ```
 
-    
+
+
+#SCRAP CODE
+```{r}
+saveGIF({
+
+  for (i in unique(outbreaks_map$bi_year)) {
+
+    data <- subset(outbreaks_map, bi_year == i)
+    p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, colour="white")) + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_gradient(low = "white", high = "blue", na.value = "black") + ggtitle(i)
+
+    print(p)                      
+
+  }
+}, movie.name = "map.gif", interval = 0.2)
+
+
+saveGIF({
+  brownian.motion(pch = 21, cex = 5, col = "red", bg = "yellow")
+}, movie.name = "brownian_motion.gif", interval = 0.1, nmax = 30, 
+  ani.width = 600)
+
+im.convert(p, output = "animation.gif", convert = c("convert", "gm convert"), 
+    cmd.fun = if (.Platform$OS.type == "windows") shell else system, extra.opts = "", 
+    clean = FALSE)
+gm.convert(..., convert = "gm convert")
+
+
+system("convert -delay 80 *.png brownian_motion.gif")
+
+
+#gganimate_save(g, filename = "maps.mp4", saver = "mp4")
+
+#ffmpeg(pattern="images_%04d.png", output="video.mp4", rate=10)
+
+#gganimate(p, filename = "maptimeseries",  saver = "gif", interval = 3.0)
+
+#aq <- airquality
+#aq$date <- as.Date(paste(1973, aq$Month, aq$Day, sep = "-"))
+
+#p2 <- ggplot(aq, aes(date, Temp, frame = Month, cumulative = TRUE)) +
+  #geom_line()
+
+#gganimate(p2, title_frame = FALSE)
+
+```
+  
+  
