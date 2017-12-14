@@ -1,5 +1,5 @@
 ---
-title: "Food Outbreaks in the United States"
+title: "Foodborne Outbreaks Over the Past 20 Years: How to Avoid Illess" 
 author: "Erika DeAngelis and Rebecca Silva"
 date: "December 18, 2017"
 output:
@@ -8,7 +8,8 @@ output:
 ---
 
 ```{r}
-library(mdsr)   # Load additional packages here
+#Loading required packages
+library(mdsr)   
 library(tidyverse)
 library(plotly)
 library(knitr)
@@ -22,18 +23,20 @@ library(zoo)
 library(shiny)
 library(rsconnect)
 
-# Some customization.  You can alter or delete as desired (if you know what you are doing).
-trellis.par.set(theme=theme.mosaic()) # change default color scheme for lattice
+# Some customization
+trellis.par.set(theme=theme.mosaic()) 
 knitr::opts_chunk$set(
-  tidy=FALSE,     # display code as typed
+  tidy=FALSE,     
   size="small")
 ```
 
 #Data
 
 ```{r}
+#reading in the outbreaks data from the data folder in the github repository
 outbreaks_dataset <- read_csv("data/outbreaks dataset.csv")
 
+#filtering the data to only include restaurant outbreaks, and creating new variable num_outbreaks
 outbreaks_by_state <- outbreaks_dataset %>%
   filter(Location == "Restaurant") %>%
   group_by(State, Year) %>%
@@ -42,17 +45,21 @@ outbreaks_by_state <- outbreaks_dataset %>%
 ```
 
 ```{r}
-#importing florida restaurant data
+#importing florida restaurant data from url
+#Note: This chunk of code importing the data files is not needed if you are using the data from the github repo because it is already downloaded to the data folder of the repo. Only run this code once if you need to re-import the data files. This process may take a long time. Thus, this code portion has been commented out. 
+
 #for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')){
   #for(year in 10:15){
-   # url <- sprintf('ftp://dbprftp.state.fl.us/pub/llweb/rdar%s%s.csv', month, year)
+   #url <- sprintf('ftp://dbprftp.state.fl.us/pub/llweb/rdar%s%s.csv', month, year)
     #monthly_df <- read_csv(url, col_names=F)
     #write.csv(monthly_df, sprintf('data/florida_violation_%s_%s', month, year), row.names=F)
   #}
 #}
 
+#rbinding the first two months of data together
 current_bind <- rbind(read_csv('data/florida_violation_01_10'), read_csv('data/florida_violation_01_11'))
 
+#series of for loops to rbind all of the data files into one large data set
 for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')){
   for(year in 10:15){
   if((month != '01' & year != '10') & (month != '01' & year != '11')){
@@ -62,8 +69,10 @@ for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
   }
 }
 
+#renaming dataset
 all_florida_restaurants <- current_bind
 
+#creating new variables yearmon_flor and sum_violations
 violations_data <- all_florida_restaurants %>%
   mutate(date = as.Date(X11, "%m/%d/%Y"), yearmon_flor = as.yearmon(date)) %>%
   group_by(yearmon_flor) %>%
@@ -71,7 +80,7 @@ violations_data <- all_florida_restaurants %>%
 ```
 
 ```{r}
-#outbreaks for florida
+#creating outbreaks data for florida and creatng variables month_num and yearmon_date
 outbreaks_florida <- outbreaks_tidy %>%
   filter(State == "Florida", Year >= 2010) %>%  
   mutate(month_num = ifelse(Month == "January", 01, 
@@ -94,44 +103,54 @@ outbreaks_florida <- outbreaks_tidy %>%
 #Plots
 
 ```{r}
-##time series plot: Plot 1
+#Plot 1: Time Series Plot
+#graphing number of outbreaks per year for each state with ggplot
 ggplot(outbreaks_by_state, aes(x = Year, y = num_outbreaks, col = State)) + geom_line() + xlab("Year") + ylab("Number of Outbreaks") + ggtitle("Number of Outbreaks for Each U.S. State from 1998-2015") + theme(legend.position = "none")
 ```
 
 
 ```{r}
+#joining outbreaks data for florida and florida restaurant violation data
 combined_graph <- inner_join(outbreaks_florida, violations_graph, by = c("yearmon_date" = "yearmon_flor"))
 
+#plotting number of outbreaks against number of restaurant violations in florida
 ggplot(data = combined_graph, aes(x = sum_violations, y = num_outbreaks)) + geom_point() + geom_smooth(se = F) + xlim(350, 900) + ggtitle("Number of Outbreaks in Florida vs. the Number of Restaurant Violations \nin Florida between 2010 and 2015") + xlab("Sum of Restaurant Violations Per Month") + ylab("Number of Outbreaks Per Month")
 
+#calculating pearson correlation for violations and outbreaks relationship
 cor(combined_graph$sum_violations, combined_graph$num_outbreaks, method = "pearson")
 ```
 
 ##Map
 
 ```{r}
+#creating new variables state_name and bi_year
 outbreaks_data_for_map <- outbreaks_by_state %>%
   filter(Year >= 2000) %>%
+  #bi_year is every 2-year period between 2000 and 2015
   mutate(state_name = tolower(State), bi_year = 2 * floor(Year/2))
 
 all_states <- map_data("state")
 
+#joining outbreaks data with state data from maps package, assigning value to number of outbreaks
 outbreaks_map <- right_join(outbreaks_data_for_map, all_states, by = c("state_name" = "region")) 
-
 outbreaks_map$VALUE <- outbreaks_map$num_outbreaks
 
- p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, frame = bi_year, cumulative = F), colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_continuous(low = "white", high = "red", na.value = "black")
+#plotting U.S. map for each bi-year and creating color scheme for map
+p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, frame = bi_year, cumulative = F), colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_continuous(low = "white", high = "red", na.value = "black")
 
-
+#animating the maps for each bi-year together and saving it to a .mp4 file
 g <- gganimate(p, title_frame = T, interval = 3.0, "output.mp4", ani.width=600, ani.height=400)
 g
 
- p2 <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE, frame = bi_year, cumulative = F), colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_continuous(low = "white", high = "red", na.value = "black") + ggtitle("Total Number of Outbreaks by State from 1998-2015")
+#creating map for overall outbreaks from 2000-2015
+p2 <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE), colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_continuous(low = "white", high = "red", na.value = "black") + ggtitle("Total Number of Outbreaks by State from 2000-2015")
+p2
 ```
 
 
 ```{r}
-d <- outbreaks_tidy %>%
+#creating food group variables for quiz
+food_groups <- outbreaks_tidy %>%
   filter(Year >= 2013, !is.na(Food)) %>%
   mutate(poultry = ifelse(grepl("Chicken|Duck", as.character(Food)), 1, 0),
     meat = ifelse(grepl("Wings|Ham|Meatball|Sausage|Steak|Beef|Burger|Pork|burger|Bacon", as.character(Food)), 1, 0), 
@@ -142,46 +161,59 @@ d <- outbreaks_tidy %>%
     dessert = ifelse(grepl("Pie|Cookie|Brownie|Pastry", as.character(Food)), 1, 0)
          )
 
-quizfoods <- d %>%
+#creating new variables for sum of outbreaks per food group
+quizfoods <- food_groups %>%
   group_by(State) %>%
   summarise(total_poultry = sum(poultry), total_meat = sum(meat), total_fish = sum(fish), total_veggie = sum(veggie), total_carbs = sum(carbs), total_dairy = sum(dairy), total_dessert = sum(dessert), total_outbreaks = n())
 
+#part of the text to appear in Shiny
+text <- "From 2013 to 2015, the number of"
+
+#function that creates the text output for total outbreaks for chosen state
 statefooddata <- function(state){
   foods_state<- quizfoods%>% 
     filter(State == state)
-    paste("From 2013 to 2015, the number of total outbreaks was", foods_state$total_outbreaks)
+    paste(text, "total outbreaks was", foods_state$total_outbreaks)
 }
 
+#function that creates the text output for each food group chosen by user
 statefoodind <- function(state, food) {
   foods_state <- quizfoods %>%
     filter(State == state)
-  ifelse( food == "Poultry", paste("From 2013 to 2015, the number of poultry outbreaks was", foods_state$total_poultry), 
-          ifelse(food == "Meat", paste("From 2013 to 2015, the number of meat outbreaks was", foods_state$total_meat),
-                 ifelse(food == "Fish", paste("From 2013 to 2015, the number of fish outbreaks was", foods_state$total_fish),
-                        ifelse(food == "Vegetables", paste("From 2013 to 2015, the number of vegetable outbreaks was", foods_state$total_veggie),
-                               ifelse(food == "Carbs", paste("From 2013 to 2015, the number of carbs outbreaks was", foods_state$total_carbs),
-                                      ifelse(food == "Dairy", paste("From 2013 to 2015, the number of dairy outbreaks was", foods_state$total_dairy),
-                                             ifelse(food == "Desserts", paste("From 2013 to 2015, the number of dessert outbreaks was", foods_state$total_poultry), "Please select a food group.")            
+  ifelse( food == "Poultry", paste(text, "poultry outbreaks was", foods_state$total_poultry), 
+          ifelse(food == "Meat", paste(text, "meat outbreaks was", foods_state$total_meat),
+                 ifelse(food == "Fish", paste(text, "fish outbreaks was", foods_state$total_fish),
+                        ifelse(food == "Vegetables", paste(text, "vegetable outbreaks was", foods_state$total_veggie),
+                               ifelse(food == "Carbs", paste(text, "carbs outbreaks was", foods_state$total_carbs),
+                                      ifelse(food == "Dairy", paste(text, "dairy outbreaks was",   
+                                                                    foods_state$total_dairy),
+                                             ifelse(food == "Desserts", paste(text, "dessert outbreaks was",  
+                                                                              foods_state$total_poultry), "Please 
+                                                                              select a food group.")            
                             
-                        ))))))
+))))))
     
 }
 
 ```
 
 ```{r}
+#user interface for shiny package
 ui <- fluidPage(
   title = "Dangerous Foods in Your State",
   sidebarLayout(
     sidebarPanel(
+      #provides the state options that can be selected
       selectizeInput(
         'e0', 'Select Your State',
         choices = quizfoods$State
       ),
+      #provides the food group option that can be selected, allows for multiple selections
       selectizeInput(
         'e1', 'Food Preferences', choices = c("Poultry", "Meat", "Fish", "Vegetables", "Carbs", "Dairy", "Desserts"), multiple = T
       )
     ),
+    #prints the text to the app
   mainPanel(
     helpText("Foods to Avoid"),
     verbatimTextOutput("result"),
@@ -190,19 +222,25 @@ ui <- fluidPage(
 )
 )
 
+#server for shiny package
 server <- function(input, output, session) {
+    #prints the output for the state selection 
     output$result <- renderPrint({
       result <- statefooddata(input$e0)
       result
     })
+    #prints the output for each food group selection
       output$result2 <- renderPrint({
         result2 <- statefoodind(input$e0, input$e1)
         result2
       })
 }
+#creates a shiny application named food_quiz
 food_quiz <- shinyApp(ui, server)
+
+#runs the shiny application
 runApp(food_quiz)
-#rsconnect::deployApp()
+
 ```
 
 
