@@ -29,41 +29,16 @@ knitr::opts_chunk$set(
   size="small")
 ```
 
+#Data
 
 ```{r}
 outbreaks_dataset <- read_csv("data/outbreaks dataset.csv")
-table(outbreaks_dataset$State)
 
-outbreaks_tidy <- outbreaks_dataset %>%
-  filter(Location == "Restaurant") 
-
-outbreaks_by_state <- outbreaks_tidy %>%
+outbreaks_by_state <- outbreaks_dataset %>%
+  filter(Location == "Restaurant") %>%
   group_by(State, Year) %>%
-  summarise(num_outbreaks = n(), num_hosp = sum(Hospitalizations, na.rm = T), num_ill = sum(Illnesses, na.rm = T), num_fatal = sum(Fatalities, na.rm = T)) %>%
+  summarise(num_outbreaks = n()) %>%
   arrange(desc(num_outbreaks))
-
-##time series plot
-ggplot(outbreaks_by_state, aes(x = Year, y = num_outbreaks, col = State)) + geom_line() + xlab("Year") + ylab("Number of Outbreaks") + ggtitle("Number of Outbreaks for Each U.S. State from 1998-2015") + theme(legend.position = "none")
-```
-
-
-```{r}
-ecoli_data <- read_csv("data/ecoli filtered data.csv")
-names(ecoli_data)
-
-ecoli_clean <- ecoli_data %>%
-  select(biosample_acc, collection_date, epi_type, geo_loc_name, host, isolation_source, target_creation_date, status)
-```
-
-```{r}
-salmonella_1 <- read_csv("data/Salmonella Part 1.csv")
-salmonella_2 <- read_csv("data/Salmonella Part 2.csv")
-
-salmonella_dataset <- rbind(salmonella_1, salmonella_2)
-names(salmonella_dataset)
-
-salmonella_clean <- salmonella_dataset %>%
-  select(biosample_acc, epi_type, geo_loc_name, host, scientific_name, sra_release_date, strain, target_creation_date, status, isolation_source, collection_date)
 ```
 
 ```{r}
@@ -87,6 +62,12 @@ for(month in c('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
   }
 }
 
+all_florida_restaurants <- current_bind
+
+violations_data <- all_florida_restaurants %>%
+  mutate(date = as.Date(X11, "%m/%d/%Y"), yearmon_flor = as.yearmon(date)) %>%
+  group_by(yearmon_flor) %>%
+  summarise(sum_violations = sum(as.numeric(X9), na.rm = T))
 ```
 
 ```{r}
@@ -106,38 +87,22 @@ outbreaks_florida <- outbreaks_tidy %>%
                                                                                            ifelse(Month == "November", 11, 12))))))))))),
          date_char = paste(Year, month_num, sep="-"),
          yearmon_date = as.yearmon(date_char)) %>%
-  group_by(State, yearmon_date) %>%
-  summarise(num_outbreaks = n(), num_hosp = sum(Hospitalizations, na.rm = T), num_ill = sum(Illnesses, na.rm = T), num_fatal = sum(Fatalities, na.rm = T)) %>%
+  group_by(yearmon_date) %>%
+  summarise(num_outbreaks = n()) %>%
   arrange(desc(num_outbreaks))
-  
-ggplot(outbreaks_florida, aes(x = yearmon_date, y = num_outbreaks)) + geom_point() + geom_smooth(se = F)
-
-ggplot(outbreaks_florida, aes(x = yearmon_date, y = num_outbreaks)) + geom_line() 
 ```
+#Plots
 
 ```{r}
-#restaurant violations per year
-
-violations_graph <- all_florida_restaurants %>%
-  mutate(date = as.Date(X11, "%m/%d/%Y"), yearmon_flor = as.yearmon(date)) %>%
-  group_by(yearmon_flor) %>%
-  summarise(sum_violations = sum(as.numeric(X9), na.rm = T))
-
-ggplot(data = violations_graph, aes(x = yearmon_flor, y = sum_violations)) + geom_line()
-
-#ggplot() + geom_line(data = violations_graph, aes(x = yearmon_flor, y = sum_violations)) + geom_line(data = outbreaks_florida, aes(x = yearmon_date, y = num_outbreaks))
-
-
+##time series plot: Plot 1
+ggplot(outbreaks_by_state, aes(x = Year, y = num_outbreaks, col = State)) + geom_line() + xlab("Year") + ylab("Number of Outbreaks") + ggtitle("Number of Outbreaks for Each U.S. State from 1998-2015") + theme(legend.position = "none")
 ```
+
 
 ```{r}
 combined_graph <- inner_join(outbreaks_florida, violations_graph, by = c("yearmon_date" = "yearmon_flor"))
 
 ggplot(data = combined_graph, aes(x = sum_violations, y = num_outbreaks)) + geom_point() + geom_smooth(se = F) + xlim(350, 900) + ggtitle("Number of Outbreaks in Florida vs. the Number of Restaurant Violations \nin Florida between 2010 and 2015") + xlab("Sum of Restaurant Violations Per Month") + ylab("Number of Outbreaks Per Month")
-
-ggplot(data = combined_graph, aes(x = sqrt(sum_violations), y = num_outbreaks)) + geom_point() + geom_smooth(se = F)
-
-ggplot(data = combined_graph, aes(x = sqrt(sum_violations), y = num_outbreaks)) + geom_point() + geom_smooth(se = F) + xlim(20, 27)
 
 cor(combined_graph$sum_violations, combined_graph$num_outbreaks, method = "pearson")
 ```
