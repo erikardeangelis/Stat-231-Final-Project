@@ -151,7 +151,7 @@ timeseries
 
 ###Maps
 
-This animated map depicts the number of outbreaks that have occurred for every two-year period between 2000 and 2015 in each U.S. state, with the number of outbreaks represented by the color of each state (deeper red indicating more outbreaks). Certain states in the dataset were missing the number of outbreaks data for particular years, those those states with missing data are not filled in on the map. This animation was created with the gganimate package, which creates an .mp4 file as an output (which is located in the github repository). 
+This animated map depicts the number of outbreaks that have occurred for every two-year period between 2000 and 2015 in each U.S. state, with the number of outbreaks represented by the color of each state (deeper red indicating more outbreaks). Certain states in the dataset were missing the number of outbreaks data for particular years, those those states with missing data are not filled in on the map. This animation was created with the gganimate package, which creates an .mp4 file as an output. The code to create the map is below, and the .mp4 output file is located in the github repository which can be accessed here: https://github.com/erikardeangelis/Stat-231-Final-Project/blob/master/output.mp4.
 
 ```{r}
 #creating new variables state_name and bi_year
@@ -207,7 +207,7 @@ To create an interactive and engaging way of displaying the outbreaks data, we c
 
 The first component of the informative quiz is the U.S. state that the user lives in. After the user inputs their state, they are then instructed to select their food preferences, in which they can choose as many of the 7 food groups that apply to their eating habits. The quiz will output the number of total food outbreaks in the selected state, as well as the number of outbreaks in that state for each food group that the user selected. 
 
-To run the Shiny application, there is a separate .Rmd file included in the github repository called shiny_app_code.Rmd that can be accessed here: 
+To run the Shiny application, there is a separate .Rmd file included in the github repository called shiny_app_code.Rmd that can be accessed here: https://github.com/erikardeangelis/Stat-231-Final-Project/blob/master/shiny_app_code.Rmd.
 
 #Conclusion
 
