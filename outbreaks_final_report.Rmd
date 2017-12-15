@@ -72,7 +72,7 @@ outbreaks_by_state <- outbreaks_dataset %>%
   arrange(desc(num_outbreaks))
 ```
 
-The other data we included in this analysis was restaurant violation data from 2010 and 2015, taken from Florida’s food service public records between. Each month was a separate csv file, so after importing all of the files into R we created a series of for loops to bind them all together into one large data set. The main variables used in our analysis were the date of the violation and the number of violations incurred. We used these variables to create two new variables, a modified date variable (yearmon_flor) and the sum of the violations (sum_violations). The modified date only includes the month and year that a violation occurred, and we grouped the data by this variable to create sum_violations, which is the sum of the violations for all restaurants in that month and year. 
+The other data we included in this analysis was restaurant violation data from 2010 and 2015, taken from Florida’s food service public records. Each month was a separate csv file, so after importing all of the files into R we created a series of for loops to bind them all together into one large data set. The main variables used in our analysis were the date of the violation and the number of violations incurred. We used these variables to create two new variables, a modified date variable (yearmon_flor) and the sum of the violations (sum_violations). The modified date only includes the month and year that a violation occurred, and we grouped the data by this variable to create sum_violations, which is the sum of the violations for all restaurants in that month and year. 
 
 ```{r}
 #importing florida restaurant data from url
@@ -109,7 +109,7 @@ violations_data <- all_florida_restaurants %>%
   summarise(sum_violations = sum(as.numeric(X9), na.rm = T))
 ```
 
-We also created a third data set, outbreaks_florida, derived from the CDC’s outbreak data which only includes the outbreak information for the state of florida. We created a similar date variable to the restaurant violation dataset, yearmon_date, that includes the month and year in which an outbreak occurred. For this data set, we only used the yearmon_date variable and the num_outbreaks variable. 
+We also created a third data set, outbreaks_florida, derived from the CDC’s outbreak data which only includes the outbreak information for the state of Florida. We created a similar date variable to the restaurant violation dataset, yearmon_date, that includes the month and year in which an outbreak occurred. For this data set, we only used the yearmon_date variable and the num_outbreaks variable. 
 
 ```{r}
 #creating outbreaks data for florida and creatng variables month_num and yearmon_date
@@ -151,7 +151,7 @@ timeseries
 
 ###Maps
 
-This animated map depicts the number of outbreaks that have occurred for every two-year period between 2000 and 2015 in each U.S. state, with the number of outbreaks represented by the color of each state (deeper red indicating more outbreaks). Certain states in the dataset were missing the number of outbreaks data for particular years, those those states with missing data are not filled in on the map. This animation was created with the gganimate package, which creates an .mp4 file as an output. The code to create the map is below, and the .mp4 output file is located in the github repository which can be accessed here: https://github.com/erikardeangelis/Stat-231-Final-Project/blob/master/output.mp4.
+We created an animated map that depicts the number of outbreaks that have occurred for every two-year period between 2000 and 2015 in each U.S. state, with the number of outbreaks represented by the color of each state (deeper red indicating more outbreaks). Certain states in the dataset were missing the number of outbreaks data for particular years, thus those states with missing data are not filled in on the map. This animation was created with the gganimate package, which creates an .mp4 file as an output. The code to create the map is below, and the .mp4 output file is located in the github repository which can be accessed here: https://github.com/erikardeangelis/Stat-231-Final-Project/blob/master/output.mp4.
 
 ```{r}
 #creating new variables state_name and bi_year
@@ -174,7 +174,7 @@ g <- gganimate(p, title_frame = T, interval = 3.0, "output.mp4", ani.width=600, 
 g
 ```
 
-We also wanted to create a visual that would represent the total number of outbreaks for each U.S. state for all of the years in 2000-2015. Similarly to the animated map, this map represents the number of outbreaks by color, with a deeper red indicated more outbreaks in that particular state. 
+We also wanted to create a visual that would represent the total number of outbreaks for each U.S. state for all of the years in 2000-2015. Similarly to the animated map, this map represents the number of outbreaks by color, with a deeper red indicating more outbreaks in that particular state. 
 
 ```{r}
 #creating map for overall outbreaks from 2000-2015
@@ -186,7 +186,7 @@ p2
 
 We decided to focus on one variable of interest that may have a relationship with the number of outbreaks: restaurant violations. Because Florida has had a relatively large number of outbreaks (as evident on the maps above), we chose to look specifically at the number of outbreaks and the number of restaurant violations in Florida. Our data set included restaurant violations by month from 2010 to 2015. 
 
-We hypothesized that there would be a positive linear association between number of restaurant violations and number of outbreaks. We considered that more restaurant violations might mean more cases one, comparing the number of foodborne outbreaks to the number of restaurant violations per month. 
+We hypothesized that there would be a positive linear association between number of restaurant violations and number of outbreaks. We considered that more restaurant violations could mean many cases of unsafe or unhealthy restaurants, which could result in an environment where unsafe bacteria could grow in food and cause outbreaks. The following graphic shows a scatterplot with a fitted line on the number of food outbreaks versus the number of restaurant violations per month. 
 
 ```{r}
 #joining outbreaks data for florida and florida restaurant violation data
