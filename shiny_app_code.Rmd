@@ -1,0 +1,120 @@
+---
+title: "Shiny App code"
+output: html_document
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(mdsr)   
+library(tidyverse)
+library(zoo)
+library(shiny)
+library(rsconnect)
+```
+
+
+```{r}
+outbreaks_dataset <- read_csv("data/outbreaks dataset.csv")
+
+outbreaks_month <- outbreaks_dataset %>%
+  filter(Location == "Restaurant")
+```
+
+
+```{r}
+#creating food group variables for quiz
+food_groups <- outbreaks_month %>%
+  filter(Year >= 2013, !is.na(Food)) %>%
+  mutate(poultry = ifelse(grepl("Chicken|Duck", as.character(Food)), 1, 0),
+    meat = ifelse(grepl("Wings|Ham|Meatball|Sausage|Steak|Beef|Burger|Pork|burger|Bacon", as.character(Food)), 1, 0), 
+    fish = ifelse(grepl("Sushi|Oysters|Fish|Kare|Crab|fish|Tuna|Shrimp|Scallops|Salmon|Seafood|Clam|Lobster|Eel", as.character(Food)), 1, 0),
+    veggie = ifelse(grepl("Salad|Tomato|Lettuce|Pepper|Broccoli|Carrot|Bean|Cabbage|Onion|Vegetable|Guacamole|Cucumber|Zucchini", as.character(Food)), 1, 0),
+    carbs = ifelse(grepl("Roll|Bread|Fries|Rice|Noodles|Pizza|Pancake|Pasta", as.character(Food)), 1, 0),
+    dairy = ifelse(grepl("Goat|Cream|Egg|Cheese|Alfredo|Mozzarella|Provolone", as.character(Food)), 1, 0),
+    dessert = ifelse(grepl("Pie|Cookie|Brownie|Pastry", as.character(Food)), 1, 0)
+         )
+
+#creating new variables for sum of outbreaks per food group
+quizfoods <- food_groups %>%
+  group_by(State) %>%
+  summarise(total_poultry = sum(poultry), total_meat = sum(meat), total_fish = sum(fish), total_veggie = sum(veggie), total_carbs = sum(carbs), total_dairy = sum(dairy), total_dessert = sum(dessert), total_outbreaks = n())
+
+#part of the text to appear in Shiny
+text <- "From 2013 to 2015, the number of"
+
+#function that creates the text output for total outbreaks for chosen state
+statefooddata <- function(state){
+  foods_state<- quizfoods%>% 
+    filter(State == state)
+    paste(text, "total outbreaks was", foods_state$total_outbreaks)
+}
+
+#function that creates the text output for each food group chosen by user
+statefoodind <- function(state, food) {
+  foods_state <- quizfoods %>%
+    filter(State == state)
+  ifelse( food == "Poultry", paste(text, "poultry outbreaks was", foods_state$total_poultry), 
+          ifelse(food == "Meat", paste(text, "meat outbreaks was", foods_state$total_meat),
+                 ifelse(food == "Fish", paste(text, "fish outbreaks was", foods_state$total_fish),
+                        ifelse(food == "Vegetables", paste(text, "vegetable outbreaks was", foods_state$total_veggie),
+                               ifelse(food == "Carbs", paste(text, "carbs outbreaks was", foods_state$total_carbs),
+                                      ifelse(food == "Dairy", paste(text, "dairy outbreaks was",   
+                                                                    foods_state$total_dairy),
+                                             ifelse(food == "Desserts", paste(text, "dessert outbreaks was",  
+                                                                              foods_state$total_poultry), "Please 
+                                                                              select a food group.")            
+                            
+))))))
+    
+}
+
+```
+
+```{r}
+#user interface for shiny package
+ui <- fluidPage(
+  title = "Dangerous Foods in Your State",
+  sidebarLayout(
+    sidebarPanel(
+      #provides the state options that can be selected
+      selectizeInput(
+        'e0', 'Select Your State',
+        choices = quizfoods$State
+      ),
+      #provides the food group option that can be selected, allows for multiple selections
+      selectizeInput(
+        'e1', 'Food Preferences', choices = c("Poultry", "Meat", "Fish", "Vegetables", "Carbs", "Dairy", "Desserts"), multiple = T
+      )
+    ),
+    #prints the text to the app
+  mainPanel(
+    helpText("Foods to Avoid"),
+    verbatimTextOutput("result"),
+    verbatimTextOutput("result2")
+      )
+)
+)
+
+#server for shiny package
+server <- function(input, output, session) {
+    #prints the output for the state selection 
+    output$result <- renderPrint({
+      result <- statefooddata(input$e0)
+      result
+    })
+    #prints the output for each food group selection
+      output$result2 <- renderPrint({
+        result2 <- statefoodind(input$e0, input$e1)
+        result2
+      })
+}
+#creates a shiny application named food_quiz
+food_quiz <- shinyApp(ui, server)
+
+#runs the shiny application
+runApp(food_quiz)
+
+```

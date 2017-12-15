@@ -1,12 +1,35 @@
 ---
-title: "Foodborne Outbreaks Over the Past 20 Years: How to Avoid Illess" 
+title: 'Foodborne Outbreaks Over the Past 20 Years: How to Avoid Illess'
 author: "Erika DeAngelis and Rebecca Silva"
 date: "December 18, 2017"
 output:
-  pdf_document: default
+  html_document:
+    df_print: paged
   html_notebook: default
+  pdf_document: default
 ---
 
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+##Abstract
+
+Our study examines patterns of foodborne illnesses in each U.S. state from 1998 to 2015 and the relationship between the number of outbreaks and the number of restaurant violations. The amount of outbreaks seems to have decreased from 1998 and 2008, with a plateau from 2009 to 2015. After an overall review of each state, we used our data on Florida to study the relationship between foodborne illnesses and restaurant violations. Based on our data, we found a weak linear relationship between the number of outbreaks and the number of restaurant violations per month for the state of Florida. The final result of our outbreak analysis includes recommendations on what foods to avoid based on an individual’s location and food preferences, according to recent history of past foodborne outbreaks in that location.
+
+##Introduction
+
+Foodborne disease outbreaks occur when a group of people get sick from the same contaminated food. Each year there are many outbreaks across the United States that affect hundreds of people, which can lead to serious health consequences, such as hospitalizations and even fatalities. Having an interest in public health, we wanted to answer some questions we had about foodborne outbreaks in order to educate ourselves and others about which states and which common food groups have had relatively high numbers of outbreaks in the past. Some of the questions we had included: What are the trends in the United States over the years? How do foodborne outbreaks vary between states? How does the number of outbreaks relate to other variables? How can we personalize the information we learn from these outbreaks to make it more interesting and helpful for specific individuals? 
+
+To answer these questions, we started with a large data set including thousands of cases of outbreaks in the United States from 1998 to 2015. We produced a visual map of the US that depicts the number of outbreaks in each state. We looked at both the total number of outbreaks for each state from 2000 to 2015 and also the number of outbreaks each year. We translated the number of outbreaks visually by representing the variable on a red color gradient scale. Our final results include an animation displaying state-outbreak patterns from 2000 to 2015. By watching the animation, one is able to see which states have had the most outbreaks and in general, as well as how the number of overall outbreaks has decreased and then plateaued over the years. 
+
+Our next question addressed how other variables may be associated with the number of outbreaks. If we were able to find a relationship between outbreaks and another variable, this could potentially provide more important information of what to be aware of when trying to avoid future foodborne outbreaks. Specifically, we examined the number of restaurant violations and the number of outbreaks in the state of Florida from 2010 to 2015. Our results implied no strong linear association between the number of restaurant violations and the number of outbreaks for the state of Florida during this time period. 
+
+Lastly, we wanted to create an easy way for individuals to see information on recent outbreaks based on where they live and the types of food they eat on a regular basis. We created an interactive quiz in which users can input their state and their food preferences, and then the quiz will output the number of total outbreaks in their state from 2013 to 2015 as well as the number of outbreaks from 2013 to 2015 related to their specific food preferences. 
+	
+##Packages
+
+We used the following packages to conduct our analyses.
 ```{r}
 #Loading required packages
 library(mdsr)   
@@ -30,11 +53,16 @@ knitr::opts_chunk$set(
   size="small")
 ```
 
-#Data
+##Data
+
+To examine foodborne outbreaks across the United States, we used data from the Centers for Disease Control and Prevention on foodborne outbreaks in the United States between 1998 and 2015. The main variables included in our analysis were the year and month of the outbreak, the U.S. state in which the outbreak occurred, the location of the outbreak (e.g. restaurant), and the type of food that caused the outbreak. Since we were primarily interested in restaurant outbreaks, the data was limited to only include outbreaks that occurred in a restaurant location. We used this refined dataset to create a new variable, the number of outbreaks (num_outbreaks). To do this, we grouped the data by state and by outbreak year, and then summed the number of outbreaks that occurred in each state for each year. 
 
 ```{r}
 #reading in the outbreaks data from the data folder in the github repository
 outbreaks_dataset <- read_csv("data/outbreaks dataset.csv")
+
+outbreaks_month <- outbreaks_dataset %>%
+  filter(Location == "Restaurant")
 
 #filtering the data to only include restaurant outbreaks, and creating new variable num_outbreaks
 outbreaks_by_state <- outbreaks_dataset %>%
@@ -43,6 +71,8 @@ outbreaks_by_state <- outbreaks_dataset %>%
   summarise(num_outbreaks = n()) %>%
   arrange(desc(num_outbreaks))
 ```
+
+The other data we included in this analysis was restaurant violation data from 2010 and 2015, taken from Florida’s food service public records between. Each month was a separate csv file, so after importing all of the files into R we created a series of for loops to bind them all together into one large data set. The main variables used in our analysis were the date of the violation and the number of violations incurred. We used these variables to create two new variables, a modified date variable (yearmon_flor) and the sum of the violations (sum_violations). The modified date only includes the month and year that a violation occurred, and we grouped the data by this variable to create sum_violations, which is the sum of the violations for all restaurants in that month and year. 
 
 ```{r}
 #importing florida restaurant data from url
@@ -79,9 +109,11 @@ violations_data <- all_florida_restaurants %>%
   summarise(sum_violations = sum(as.numeric(X9), na.rm = T))
 ```
 
+We also created a third data set, outbreaks_florida, derived from the CDC’s outbreak data which only includes the outbreak information for the state of florida. We created a similar date variable to the restaurant violation dataset, yearmon_date, that includes the month and year in which an outbreak occurred. For this data set, we only used the yearmon_date variable and the num_outbreaks variable. 
+
 ```{r}
 #creating outbreaks data for florida and creatng variables month_num and yearmon_date
-outbreaks_florida <- outbreaks_tidy %>%
+outbreaks_florida <- outbreaks_month %>%
   filter(State == "Florida", Year >= 2010) %>%  
   mutate(month_num = ifelse(Month == "January", 01, 
                             ifelse(Month == "February", 02, 
@@ -100,27 +132,26 @@ outbreaks_florida <- outbreaks_tidy %>%
   summarise(num_outbreaks = n()) %>%
   arrange(desc(num_outbreaks))
 ```
-#Plots
+
+#Results
+
+##I. Outbreak Trends in the U.S.
+
+First, we examined the overall trend regarding how foodborne outbreaks have changed across the United States between 1998 and 2015. This line graph depicts the number of outbreaks per year in each U.S. state, with each line representing a separate state. This graph demonstrates that the number of outbreaks decreased overall between 1998 and 2009, and then from 2009 and 2015 the number of outbreaks remained relatively consistent. We hypothesize that this trend may be due to improved sanitation policy over this year period.
+
+Although this line graph depicts an overall trend of how the number of outbreaks have changed, it is difficult to determine individual state patterns due to the number of lines overlapping on the graph. Thus, we decided to visually represent the data in a different way to more clearly show state patterns. 
 
 ```{r}
 #Plot 1: Time Series Plot
 #graphing number of outbreaks per year for each state with ggplot
-ggplot(outbreaks_by_state, aes(x = Year, y = num_outbreaks, col = State)) + geom_line() + xlab("Year") + ylab("Number of Outbreaks") + ggtitle("Number of Outbreaks for Each U.S. State from 1998-2015") + theme(legend.position = "none")
+timeseries <- ggplot(outbreaks_by_state, aes(x = Year, y = num_outbreaks, col = State)) + geom_line() + xlab("Year") + ylab("Number of Outbreaks") + ggtitle("Number of Outbreaks for Each U.S. State from 1998-2015") + guides(col = guide_legend(keywidth = 1, keyheight = .75))
+
+timeseries
 ```
 
+###Maps
 
-```{r}
-#joining outbreaks data for florida and florida restaurant violation data
-combined_graph <- inner_join(outbreaks_florida, violations_graph, by = c("yearmon_date" = "yearmon_flor"))
-
-#plotting number of outbreaks against number of restaurant violations in florida
-ggplot(data = combined_graph, aes(x = sum_violations, y = num_outbreaks)) + geom_point() + geom_smooth(se = F) + xlim(350, 900) + ggtitle("Number of Outbreaks in Florida vs. the Number of Restaurant Violations \nin Florida between 2010 and 2015") + xlab("Sum of Restaurant Violations Per Month") + ylab("Number of Outbreaks Per Month")
-
-#calculating pearson correlation for violations and outbreaks relationship
-cor(combined_graph$sum_violations, combined_graph$num_outbreaks, method = "pearson")
-```
-
-##Map
+This animated map depicts the number of outbreaks that have occurred for every two-year period between 2000 and 2015 in each U.S. state, with the number of outbreaks represented by the color of each state (deeper red indicating more outbreaks). Certain states in the dataset were missing the number of outbreaks data for particular years, those those states with missing data are not filled in on the map. This animation was created with the gganimate package, which creates an .mp4 file as an output (which is located in the github repository). 
 
 ```{r}
 #creating new variables state_name and bi_year
@@ -141,110 +172,54 @@ p <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = grou
 #animating the maps for each bi-year together and saving it to a .mp4 file
 g <- gganimate(p, title_frame = T, interval = 3.0, "output.mp4", ani.width=600, ani.height=400)
 g
+```
 
+We also wanted to create a visual that would represent the total number of outbreaks for each U.S. state for all of the years in 2000-2015. Similarly to the animated map, this map represents the number of outbreaks by color, with a deeper red indicated more outbreaks in that particular state. 
+
+```{r}
 #creating map for overall outbreaks from 2000-2015
 p2 <- ggplot() + geom_polygon(data=outbreaks_map, aes(x=long, y=lat, group = group, fill=VALUE), colour="white") + xlab("Longitude") + ylab("Latitude") + theme(plot.title = element_text(hjust = 0.5, face = "bold")) + scale_fill_continuous(low = "white", high = "red", na.value = "black") + ggtitle("Total Number of Outbreaks by State from 2000-2015")
 p2
 ```
 
+##II. Case Study: Number of Restaurant Violations and Food Outbreaks in Florida 2010-2015
+
+We decided to focus on one variable of interest that may have a relationship with the number of outbreaks: restaurant violations. Because Florida has had a relatively large number of outbreaks (as evident on the maps above), we chose to look specifically at the number of outbreaks and the number of restaurant violations in Florida. Our data set included restaurant violations by month from 2010 to 2015. 
+
+We hypothesized that there would be a positive linear association between number of restaurant violations and number of outbreaks. We considered that more restaurant violations might mean more cases one, comparing the number of foodborne outbreaks to the number of restaurant violations per month. 
 
 ```{r}
-#creating food group variables for quiz
-food_groups <- outbreaks_tidy %>%
-  filter(Year >= 2013, !is.na(Food)) %>%
-  mutate(poultry = ifelse(grepl("Chicken|Duck", as.character(Food)), 1, 0),
-    meat = ifelse(grepl("Wings|Ham|Meatball|Sausage|Steak|Beef|Burger|Pork|burger|Bacon", as.character(Food)), 1, 0), 
-    fish = ifelse(grepl("Sushi|Oysters|Fish|Kare|Crab|fish|Tuna|Shrimp|Scallops|Salmon|Seafood|Clam|Lobster|Eel", as.character(Food)), 1, 0),
-    veggie = ifelse(grepl("Salad|Tomato|Lettuce|Pepper|Broccoli|Carrot|Bean|Cabbage|Onion|Vegetable|Guacamole|Cucumber|Zucchini", as.character(Food)), 1, 0),
-    carbs = ifelse(grepl("Roll|Bread|Fries|Rice|Noodles|Pizza|Pancake|Pasta", as.character(Food)), 1, 0),
-    dairy = ifelse(grepl("Goat|Cream|Egg|Cheese|Alfredo|Mozzarella|Provolone", as.character(Food)), 1, 0),
-    dessert = ifelse(grepl("Pie|Cookie|Brownie|Pastry", as.character(Food)), 1, 0)
-         )
+#joining outbreaks data for florida and florida restaurant violation data
+combined_graph <- inner_join(outbreaks_florida, violations_data, by = c("yearmon_date" = "yearmon_flor"))
 
-#creating new variables for sum of outbreaks per food group
-quizfoods <- food_groups %>%
-  group_by(State) %>%
-  summarise(total_poultry = sum(poultry), total_meat = sum(meat), total_fish = sum(fish), total_veggie = sum(veggie), total_carbs = sum(carbs), total_dairy = sum(dairy), total_dessert = sum(dessert), total_outbreaks = n())
+#plotting number of outbreaks against number of restaurant violations in florida
+ggplot(data = combined_graph, aes(x = sum_violations, y = num_outbreaks)) + geom_point() + geom_smooth(se = F) + xlim(350, 900) + ggtitle("Number of Outbreaks in Florida vs. the Number of Restaurant Violations \nin Florida between 2010 and 2015") + xlab("Sum of Restaurant Violations Per Month") + ylab("Number of Outbreaks Per Month")
 
-#part of the text to appear in Shiny
-text <- "From 2013 to 2015, the number of"
-
-#function that creates the text output for total outbreaks for chosen state
-statefooddata <- function(state){
-  foods_state<- quizfoods%>% 
-    filter(State == state)
-    paste(text, "total outbreaks was", foods_state$total_outbreaks)
-}
-
-#function that creates the text output for each food group chosen by user
-statefoodind <- function(state, food) {
-  foods_state <- quizfoods %>%
-    filter(State == state)
-  ifelse( food == "Poultry", paste(text, "poultry outbreaks was", foods_state$total_poultry), 
-          ifelse(food == "Meat", paste(text, "meat outbreaks was", foods_state$total_meat),
-                 ifelse(food == "Fish", paste(text, "fish outbreaks was", foods_state$total_fish),
-                        ifelse(food == "Vegetables", paste(text, "vegetable outbreaks was", foods_state$total_veggie),
-                               ifelse(food == "Carbs", paste(text, "carbs outbreaks was", foods_state$total_carbs),
-                                      ifelse(food == "Dairy", paste(text, "dairy outbreaks was",   
-                                                                    foods_state$total_dairy),
-                                             ifelse(food == "Desserts", paste(text, "dessert outbreaks was",  
-                                                                              foods_state$total_poultry), "Please 
-                                                                              select a food group.")            
-                            
-))))))
-    
-}
-
+#calculating pearson correlation for violations and outbreaks relationship
+cor(combined_graph$sum_violations, combined_graph$num_outbreaks, method = "pearson")
 ```
 
-```{r}
-#user interface for shiny package
-ui <- fluidPage(
-  title = "Dangerous Foods in Your State",
-  sidebarLayout(
-    sidebarPanel(
-      #provides the state options that can be selected
-      selectizeInput(
-        'e0', 'Select Your State',
-        choices = quizfoods$State
-      ),
-      #provides the food group option that can be selected, allows for multiple selections
-      selectizeInput(
-        'e1', 'Food Preferences', choices = c("Poultry", "Meat", "Fish", "Vegetables", "Carbs", "Dairy", "Desserts"), multiple = T
-      )
-    ),
-    #prints the text to the app
-  mainPanel(
-    helpText("Foods to Avoid"),
-    verbatimTextOutput("result"),
-    verbatimTextOutput("result2")
-      )
-)
-)
+After looking at the plot, there appears to be no strong association between the two variables. We decided to calculate a Pearson Correlation Coefficient in order to measure the strength of the linear correlation with a statistical test. The coefficient of .18 indicates a weak linear relationship between the two variables. Therefore, based on our data, we cannot conclude that there is a linear relationship between the number of outbreaks and the number of restaurant violations. 
 
-#server for shiny package
-server <- function(input, output, session) {
-    #prints the output for the state selection 
-    output$result <- renderPrint({
-      result <- statefooddata(input$e0)
-      result
-    })
-    #prints the output for each food group selection
-      output$result2 <- renderPrint({
-        result2 <- statefoodind(input$e0, input$e1)
-        result2
-      })
-}
-#creates a shiny application named food_quiz
-food_quiz <- shinyApp(ui, server)
+##III. Informative Quiz: Shiny App
 
-#runs the shiny application
-runApp(food_quiz)
+To create an interactive and engaging way of displaying the outbreaks data, we created an informative quiz with the shiny package in R. To do this, we first filtered our data to only include outbreaks from 2013 to 2015, because we wanted the quiz to only include the most recent observations from the dataset since those years are most relevant to future outbreaks. We examined the foods involved in the outbreaks during these years and created 7 food groups: poultry, meat, fish, vegetables, carbs, dairy, and dessert. We then created variables summing the number of outbreaks for each food group in each state. 
 
-```
+The first component of the informative quiz is the U.S. state that the user lives in. After the user inputs their state, they are then instructed to select their food preferences, in which they can choose as many of the 7 food groups that apply to their eating habits. The quiz will output the number of total food outbreaks in the selected state, as well as the number of outbreaks in that state for each food group that the user selected. 
 
+To run the Shiny application, there is a separate .Rmd file included in the github repository called shiny_app_code.Rmd that can be accessed here: 
 
+#Conclusion
 
+This project explored the trends regarding foodborne outbreaks in the U.S. over the course of around 15 years. As a result of our analyses, we were unable to find relationship between the number of outbreaks and the number of restaurant violations in Florida, however we successfully created an interactive quiz that outputs information regarding the number of foodborne outbreaks from 2013 to 2015 based on state and food preferences.
+
+The number of outbreaks in the United States overall decreased from 1998 to 2009 and plateaued after 2009. One major limitation of our data was that the most specific location provided for each outbreak was at the state level. Therefore, we were not able to look at cities and how outbreak cases were geographically distributed in each state. Furthermore, California and Florida had much higher numbers of outbreaks throughout the years when compared to the other states. Since there was such a large difference between those two states and the rest of the U.S. states, the time series line graph and the animated map may have been less effective in seeing the trends across the other states because comparatively, the other states looked relatively similar with relatively few outbreaks. We realize that weighting the number of outbreaks by the state’s population could have given more accurate and useful information. Regardless, our analysis does demonstrate that there has been a general decrease in outbreaks in the U.S. from 1998-2015.
+
+Additionally, we were unable to find a strong association between number of restaurant violations and number of outbreaks per month in Florida. If we had found a significant relationship, one of the next steps could have been to see if the the relationship applies to other states besides Florida. However, another possible future direction could be to look at California or other U.S. states and see if there is a stronger relationship between the variables in other states. Another future direction would be do look for other variables that may be related to foodborne outbreaks in order to discern some of the causes of outbreaks.
+
+Lastly, we were successful in creating an interactive quiz that is personalizable to individual’s specific location and food preferences. The next step with this quiz would be to make the output even more specific. For example, one informative direction would be to tell the user which restaurants in their specific city or town had foodborne outbreaks in the past and which foods caused those outbreaks, so that the user could avoid the potential of becoming ill. 
+
+Ultimately, this project resulted in an animated map and a interactive shiny application, that with more refinement and state-specific data could be an excellent source for people to use when determining whether they need to take precautions to avoid foodborne outbreaks. Our hope is that the results from this project will allow people to make well-informed decisions on the types of foods they eat and where they eat those foods, and will educate people on the importance past outbreaks may have on their lives.
 
   
   
